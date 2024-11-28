@@ -1,82 +1,96 @@
 package org.example.DAOrealisation;
 
 import org.example.interfaces.DAO;
-import org.example.database.DatabaseConnection;
 import org.example.models.User;
-
-import java.sql.*;
-import java.util.ArrayList;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
 import java.util.List;
 
 public class UserDAO implements DAO<User> {
+    private final SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
 
     @Override
     public void save(User user) {
-        String query = "INSERT INTO Users (name) VALUES (?)";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, user.getName());
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            session.save(user);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }
 
     @Override
     public User getById(int id) {
-        String query = "SELECT * FROM Users WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                return new User(resultSet.getInt("id"), resultSet.getString("name"),
-                        resultSet.getTimestamp("creation_date"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("SELECT u FROM User u LEFT JOIN FETCH u.tickets WHERE u.id = :id", User.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
         }
-        return null;
     }
 
     @Override
     public List<User> getAll() {
-        String query = "SELECT * FROM Users";
-        List<User> users = new ArrayList<>();
-        try (Connection connection = DatabaseConnection.connect();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
-            while (resultSet.next()) {
-                users.add(new User(resultSet.getInt("id"), resultSet.getString("name"),
-                        resultSet.getTimestamp("creation_date")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM User", User.class).list(); // Use the entity name
         }
-        return users;
     }
 
     @Override
     public void update(User user) {
-        String query = "UPDATE Users SET name = ? WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, user.getName());
-            statement.setInt(2, user.getId());
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            session.update(user);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }
 
+   /* public void updateUserTickets(User user) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            session.merge(user); // Cascade will handle tickets
+            transaction.commit();
+            System.out.println("User and tickets updated successfully.");
+        } catch (Exception e) {
+            if (transaction != null && transaction.getStatus().canRollback()) transaction.rollback();
+            System.err.println("Transaction rolled back due to an error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }*/
+
     @Override
     public void delete(int id) {
-        String query = "DELETE FROM Users WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            User user = session.get(User.class, id);
+            if (user != null) {
+                session.delete(user);
+            }
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteAll() {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            session.createQuery("DELETE FROM User").executeUpdate();
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }

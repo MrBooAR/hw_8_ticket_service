@@ -1,84 +1,87 @@
 package org.example.DAOrealisation;
 
 import org.example.interfaces.DAO;
-import org.example.database.DatabaseConnection;
 import org.example.models.Ticket;
-
-import java.sql.*;
-import java.util.ArrayList;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
 import java.util.List;
 
 public class TicketDAO implements DAO<Ticket> {
 
+    private final SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+
     @Override
     public void save(Ticket ticket) {
-        String query = "INSERT INTO Tickets (user_id, ticket_type) VALUES (?, ?::ticket_type)";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, ticket.getUserId());
-            statement.setString(2, ticket.getTicketType());
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            session.save(ticket);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }
 
     @Override
     public Ticket getById(int id) {
-        String query = "SELECT * FROM Tickets WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                return new Ticket(resultSet.getInt("id"), resultSet.getInt("user_id"),
-                        resultSet.getString("ticket_type"), resultSet.getTimestamp("creation_date"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        try (Session session = sessionFactory.openSession()) {
+            return session.get(Ticket.class, id);
         }
-        return null;
+    }
+
+    public List<Ticket> getTicketsByUserId(int userId) {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM Ticket WHERE user.id = :userId", Ticket.class)
+                    .setParameter("userId", userId)
+                    .list();
+        }
     }
 
     @Override
     public List<Ticket> getAll() {
-        String query = "SELECT * FROM Tickets";
-        List<Ticket> tickets = new ArrayList<>();
-        try (Connection connection = DatabaseConnection.connect();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
-            while (resultSet.next()) {
-                tickets.add(new Ticket(resultSet.getInt("id"), resultSet.getInt("user_id"),
-                        resultSet.getString("ticket_type"), resultSet.getTimestamp("creation_date")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM Ticket", Ticket.class).list(); // Use the entity name
         }
-        return tickets;
     }
 
     @Override
     public void update(Ticket ticket) {
-        String query = "UPDATE Tickets SET ticket_type = ?::ticket_type WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, ticket.getTicketType());
-            statement.setInt(2, ticket.getId());
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            session.update(ticket);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }
 
     @Override
     public void delete(int id) {
-        String query = "DELETE FROM Tickets WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        Transaction transaction = null;
+        try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
+            Ticket ticket = session.get(Ticket.class, id);
+            if (ticket != null) {
+                session.delete(ticket);
+            }
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }
+
+    public List<Ticket> getAllByUserId(int userId) {
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("FROM Ticket t WHERE t.user.id = :userId", Ticket.class)
+                    .setParameter("userId", userId)
+                    .list();
+        }
+    }
+
 }
