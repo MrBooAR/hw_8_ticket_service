@@ -1,8 +1,11 @@
 package org.example.models;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import javax.persistence.*;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tickets")
@@ -19,8 +22,9 @@ public class Ticket {
     @Column(name = "ticket_type", nullable = false)
     private TicketType ticketType;
 
+    @CreationTimestamp
     @Column(name = "creation_date", nullable = false, updatable = false)
-    private Timestamp creationDate;
+    private LocalDateTime creationDate;
 
     public Ticket() {
     }
@@ -28,7 +32,6 @@ public class Ticket {
     public Ticket(User user, TicketType ticketType) {
         this.user = user;
         this.ticketType = ticketType;
-        this.creationDate = new Timestamp(System.currentTimeMillis());
     }
 
     public int getId() {
@@ -43,7 +46,7 @@ public class Ticket {
         return ticketType;
     }
 
-    public Timestamp getCreationDate() {
+    public LocalDateTime getCreationDate() {
         return creationDate;
     }
 
