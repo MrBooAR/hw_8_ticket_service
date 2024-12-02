@@ -1,7 +1,6 @@
 package org.example.models;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.Type;
+import javax.persistence.*;
 
 import java.sql.Timestamp;
 
@@ -16,7 +15,7 @@ public class Ticket {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING) // Maps Java Enum to String
+    @Enumerated(EnumType.ORDINAL)
     @Column(name = "ticket_type", nullable = false)
     private TicketType ticketType;
 

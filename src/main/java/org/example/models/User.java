@@ -1,6 +1,6 @@
 package org.example.models;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.ArrayList;
