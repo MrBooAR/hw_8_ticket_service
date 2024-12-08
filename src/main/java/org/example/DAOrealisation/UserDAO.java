@@ -1,83 +1,56 @@
 package org.example.DAOrealisation;
 
-import org.example.interfaces.DAO;
-import org.example.database.DatabaseConnection;
 import org.example.models.User;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
-public class UserDAO implements DAO<User> {
+@Repository
+public class UserDAO {
 
-    @Override
+    private final SessionFactory sessionFactory;
+
+    @Autowired
+    public UserDAO(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
+    @Transactional
     public void save(User user) {
-        String query = "INSERT INTO Users (name) VALUES (?)";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, user.getName());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        sessionFactory.getCurrentSession().save(user);
     }
 
-    @Override
+    @Transactional
     public User getById(int id) {
-        String query = "SELECT * FROM Users WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                return new User(resultSet.getInt("id"), resultSet.getString("name"),
-                        resultSet.getTimestamp("creation_date"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return sessionFactory.getCurrentSession()
+                .createQuery("SELECT u FROM User u LEFT JOIN FETCH u.tickets WHERE u.id = :id", User.class)
+                .setParameter("id", id)
+                .uniqueResult();
     }
 
-    @Override
+    @Transactional
     public List<User> getAll() {
-        String query = "SELECT * FROM Users";
-        List<User> users = new ArrayList<>();
-        try (Connection connection = DatabaseConnection.connect();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
-            while (resultSet.next()) {
-                users.add(new User(resultSet.getInt("id"), resultSet.getString("name"),
-                        resultSet.getTimestamp("creation_date")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return users;
+        return sessionFactory.getCurrentSession().createQuery("FROM User", User.class).list();
     }
 
-    @Override
+    @Transactional
     public void update(User user) {
-        String query = "UPDATE Users SET name = ? WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, user.getName());
-            statement.setInt(2, user.getId());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        sessionFactory.getCurrentSession().update(user);
+    }
+
+    @Transactional
+    public void delete(int id) {
+        User user = sessionFactory.getCurrentSession().get(User.class, id);
+        if (user != null) {
+            sessionFactory.getCurrentSession().delete(user);
         }
     }
 
-    @Override
-    public void delete(int id) {
-        String query = "DELETE FROM Users WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    @Transactional
+    public void deleteAll() {
+        sessionFactory.getCurrentSession().createQuery("DELETE FROM User").executeUpdate();
     }
 }

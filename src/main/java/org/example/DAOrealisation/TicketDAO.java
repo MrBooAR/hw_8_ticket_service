@@ -1,84 +1,51 @@
 package org.example.DAOrealisation;
 
-import org.example.interfaces.DAO;
-import org.example.database.DatabaseConnection;
 import org.example.models.Ticket;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
-public class TicketDAO implements DAO<Ticket> {
+@Repository
+public class TicketDAO {
 
-    @Override
+    private final SessionFactory sessionFactory;
+
+    @Autowired
+    public TicketDAO(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
+    @Transactional
     public void save(Ticket ticket) {
-        String query = "INSERT INTO Tickets (user_id, ticket_type) VALUES (?, ?::ticket_type)";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, ticket.getUserId());
-            statement.setString(2, ticket.getTicketType());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        sessionFactory.getCurrentSession().save(ticket);
     }
 
-    @Override
+    @Transactional
     public Ticket getById(int id) {
-        String query = "SELECT * FROM Tickets WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                return new Ticket(resultSet.getInt("id"), resultSet.getInt("user_id"),
-                        resultSet.getString("ticket_type"), resultSet.getTimestamp("creation_date"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return sessionFactory.getCurrentSession().get(Ticket.class, id);
     }
 
-    @Override
+    @Transactional
     public List<Ticket> getAll() {
-        String query = "SELECT * FROM Tickets";
-        List<Ticket> tickets = new ArrayList<>();
-        try (Connection connection = DatabaseConnection.connect();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
-            while (resultSet.next()) {
-                tickets.add(new Ticket(resultSet.getInt("id"), resultSet.getInt("user_id"),
-                        resultSet.getString("ticket_type"), resultSet.getTimestamp("creation_date")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return tickets;
+        return sessionFactory.getCurrentSession().createQuery("FROM Ticket", Ticket.class).list();
     }
 
-    @Override
-    public void update(Ticket ticket) {
-        String query = "UPDATE Tickets SET ticket_type = ?::ticket_type WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, ticket.getTicketType());
-            statement.setInt(2, ticket.getId());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
+    @Transactional
     public void delete(int id) {
-        String query = "DELETE FROM Tickets WHERE id = ?";
-        try (Connection connection = DatabaseConnection.connect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        Ticket ticket = sessionFactory.getCurrentSession().get(Ticket.class, id);
+        if (ticket != null) {
+            sessionFactory.getCurrentSession().delete(ticket);
         }
+    }
+
+    @Transactional
+    public List<Ticket> getTicketsByUserId(int userId) {
+        return sessionFactory.getCurrentSession()
+                .createQuery("FROM Ticket WHERE user.id = :userId", Ticket.class)
+                .setParameter("userId", userId)
+                .list();
     }
 }

@@ -1,22 +1,36 @@
 package org.example.models;
 
+import org.hibernate.annotations.CreationTimestamp;
+
+import javax.persistence.*;
+
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "tickets")
 public class Ticket {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private int userId;
-    private String ticketType;
-    private Timestamp creationDate;
 
-    public Ticket(int id, int userId, String ticketType, Timestamp creationDate) {
-        this.id = id;
-        this.userId = userId;
-        this.ticketType = ticketType;
-        this.creationDate = creationDate;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "ticket_type", nullable = false)
+    private TicketType ticketType;
+
+    @CreationTimestamp
+    @Column(name = "creation_date", nullable = false, updatable = false)
+    private LocalDateTime creationDate;
+
+    public Ticket() {
     }
 
-    public Ticket(int userId, String ticketType) {
-        this.userId = userId;
+    public Ticket(User user, TicketType ticketType) {
+        this.user = user;
         this.ticketType = ticketType;
     }
 
@@ -25,18 +39,22 @@ public class Ticket {
     }
 
     public int getUserId() {
-        return userId;
+        return user.getId(); // Access the ID of the related User
     }
 
-    public String getTicketType() {
+    public TicketType getTicketType() {
         return ticketType;
     }
 
-    public Timestamp getCreationDate() {
+    public LocalDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setTicketType(String ticketType) {
+    public void setTicketType(TicketType ticketType) {
         this.ticketType = ticketType;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
