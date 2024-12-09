@@ -18,6 +18,9 @@ public class User {
     @Column(name = "creation_date", nullable = false, updatable = false)
     private Timestamp creationDate;
 
+    @Column(nullable = false)
+    private String status; // New field for user status
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Ticket> tickets = new ArrayList<>();
 
@@ -27,7 +30,9 @@ public class User {
     public User(String name) {
         this.name = name;
         this.creationDate = new Timestamp(System.currentTimeMillis());
+        this.status = "INACTIVE"; // Default status when a user is created
     }
+
 
     public int getId() {
         return id;
@@ -41,8 +46,16 @@ public class User {
         return creationDate;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setStatus(String status) {
+        this.status = status; // Set user status
     }
 
     public List<Ticket> getTickets() {
