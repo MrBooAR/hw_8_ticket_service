@@ -1,5 +1,7 @@
 package org.example.models;
 
+import org.example.models.enums.Status;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
@@ -18,8 +20,9 @@ public class User {
     @Column(name = "creation_date", nullable = false, updatable = false)
     private Timestamp creationDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status; // New field for user status
+    private Status status;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Ticket> tickets = new ArrayList<>();
@@ -30,7 +33,7 @@ public class User {
     public User(String name) {
         this.name = name;
         this.creationDate = new Timestamp(System.currentTimeMillis());
-        this.status = "INACTIVE"; // Default status when a user is created
+        this.status = Status.INACTIVE; // Default status when a user is created
     }
 
 
@@ -46,7 +49,7 @@ public class User {
         return creationDate;
     }
 
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
@@ -54,7 +57,7 @@ public class User {
         this.name = name;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Status status) {
         this.status = status; // Set user status
     }
 

@@ -1,5 +1,6 @@
 package org.example.models;
 
+import org.example.models.enums.TicketType;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
@@ -46,14 +47,8 @@ public class Ticket {
         this.price = price;
     }
 
-    // Getters and Setters
-
     public int getId() {
         return id;
-    }
-
-    public int getUserId() {
-        return user != null ? user.getId() : 0; // Handles null user
     }
 
     public TicketType getTicketType() {

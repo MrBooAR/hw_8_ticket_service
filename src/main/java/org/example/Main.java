@@ -3,7 +3,7 @@ package org.example;
 import org.example.database.HibernateConfig;
 import org.example.database.SpringConfig;
 import org.example.models.Ticket;
-import org.example.models.TicketType;
+import org.example.models.enums.TicketType;
 import org.example.models.User;
 import org.example.services.TicketService;
 import org.example.services.UserService;

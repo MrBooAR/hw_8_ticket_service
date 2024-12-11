@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.DAOrealisation.TicketDAO;
 import org.example.models.Ticket;
-import org.example.models.TicketType;
+import org.example.models.enums.TicketType;
 import org.example.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
