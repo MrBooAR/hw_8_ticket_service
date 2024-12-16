@@ -1,6 +1,8 @@
 package org.example.DAOrealisation;
 
 import org.example.models.User;
+import org.example.models.Ticket;
+import org.example.models.enums.Status;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -52,5 +54,19 @@ public class UserDAO {
     @Transactional
     public void deleteAll() {
         sessionFactory.getCurrentSession().createQuery("DELETE FROM User").executeUpdate();
+    }
+
+    @Transactional
+    public void activateUserAndCreateTicket(int userId, Ticket ticket) {
+        // Fetch the user entity
+        User user = sessionFactory.getCurrentSession().get(User.class, userId);
+        if (user != null) {
+            user.setStatus(Status.ACTIVE);
+            sessionFactory.getCurrentSession().update(user);
+            ticket.setUser(user);
+            sessionFactory.getCurrentSession().save(ticket);
+        } else {
+            throw new RuntimeException("User not found with id: " + userId);
+        }
     }
 }
